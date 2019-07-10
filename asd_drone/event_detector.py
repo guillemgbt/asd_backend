@@ -1,5 +1,9 @@
 import numpy as np
+import time
+import os
 import cv2
+from asd_rest_api.models import ScanningArea, Event
+from asd_backend import settings
 
 
 class EventDetector:
@@ -15,11 +19,13 @@ class EventDetector:
         self.colors = np.random.uniform(0, 255, size=(len(self.entities), 3))
         self.net = cv2.dnn.readNetFromCaffe(self.proto, self.model)
 
-    def analyse(self, image_path):
+    def analyse(self, image_path, area_id):
 
         image = cv2.imread(image_path)
 
         detections = self.compute_detections(image)
+
+        entities = ''
 
         # loop over the detections
         for i in np.arange(0, self.detection_size(detections)):
@@ -36,6 +42,7 @@ class EventDetector:
 
                 (entity, color) = self.entity_for(detections, i)
                 box = self.compute_box(detections, i, image)
+                entities = entities+entity+','
 
                 self.draw_detction_in(image,
                                       box=box,
@@ -43,6 +50,10 @@ class EventDetector:
                                       confidence=confidence,
                                       color=color)
 
+        if entities != '':
+            self.create_event(entities=entities,
+                              area_id=area_id,
+                              image=image)
 
     def compute_detections(self, image):
         blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 0.007843, (300, 300), 127.5)
@@ -77,3 +88,34 @@ class EventDetector:
         cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
         y = startY - 15 if startY - 15 > 15 else startY + 15
         cv2.putText(image, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    def create_event(self, entities, area_id, image):
+        print(entities)
+
+        image_path = self.store_image_in_media(image=image,
+                                               area_id=area_id)
+
+        if image_path is not None:
+            event = Event(area_id=area_id,
+                          entity=entities,
+                          count=1,
+                          image=image_path)
+
+            event.save()
+            print('    Saving event:', event.id, 'in area:', event.area_id, 'entity:', event.entity, 'image_path:', event.image)
+        else:
+            print('    COULD NOT STORE IMAGE. NO EVENT CREATD')
+
+
+
+    def store_image_in_media(self, image, area_id):
+        timestamp = str(time.time()).replace('.', '')
+        image_id = str(area_id) + '_' + timestamp
+        final_path = settings.BASE_DIR + settings.MEDIA_URL + str(image_id) + '.jpg'
+        cv2.imwrite(final_path, img=image)
+
+        if os.path.isfile(final_path):
+            return final_path
+        else:
+            return None
+
