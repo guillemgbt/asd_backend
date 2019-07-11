@@ -2,7 +2,7 @@ import numpy as np
 import time
 import os
 import cv2
-from asd_rest_api.models import ScanningArea, Event
+from asd_rest_api.models import Event
 from asd_backend import settings
 
 
@@ -102,9 +102,9 @@ class EventDetector:
                           image=image_path)
 
             event.save()
-            print('    Saving event:', event.id, 'in area:', event.area_id, 'entity:', event.entity, 'image_path:', event.image)
+            print('-> Saving event:', event.id, 'in area:', event.area_id, 'entity:', event.entity, 'image_path:', event.image)
         else:
-            print('    COULD NOT STORE IMAGE. NO EVENT CREATD')
+            print('-> COULD NOT STORE IMAGE. NO EVENT CREATD')
 
 
 
