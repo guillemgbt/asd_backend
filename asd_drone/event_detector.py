@@ -19,10 +19,12 @@ class EventDetector:
         self.colors = np.random.uniform(0, 255, size=(len(self.entities), 3))
         self.net = cv2.dnn.readNetFromCaffe(self.proto, self.model)
 
-    def analyse(self, image_path, area_id):
+    def analyse_image_in_path(self, image_path, area_id):
 
         image = cv2.imread(image_path)
+        self.analyse_image(image, area_id)
 
+    def analyse_image(self, image, area_id):
         detections = self.compute_detections(image)
 
         entities = ''
@@ -42,7 +44,7 @@ class EventDetector:
 
                 (entity, color) = self.entity_for(detections, i)
                 box = self.compute_box(detections, i, image)
-                entities = entities+entity+','
+                entities = entities + entity + ','
 
                 self.draw_detction_in(image,
                                       box=box,
