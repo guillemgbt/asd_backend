@@ -109,7 +109,6 @@ class EventDetector:
             print('-> COULD NOT STORE IMAGE. NO EVENT CREATD')
 
 
-
     def store_image_in_media(self, image, area_id):
         timestamp = str(time.time()).replace('.', '')
         image_id = str(area_id) + '_' + timestamp
@@ -117,7 +116,7 @@ class EventDetector:
         cv2.imwrite(final_path, img=image)
 
         if os.path.isfile(final_path):
-            return final_path
+            return '/'+image_id+'.jpg'
         else:
             return None
 
