@@ -4,6 +4,8 @@ import os
 import cv2
 from asd_rest_api.models import Event
 from asd_backend import settings
+from asd_drone.event_entity import EventEntity
+from asd_drone.utils import Utils
 
 
 class EventDetector:
@@ -27,7 +29,9 @@ class EventDetector:
     def analyse_image(self, image, area_id):
         detections = self.compute_detections(image)
 
-        entities = ''
+        # NEW
+
+        event_entities = []
 
         # loop over the detections
         for i in np.arange(0, self.detection_size(detections)):
@@ -43,19 +47,39 @@ class EventDetector:
                 # the object
 
                 (entity, color) = self.entity_for(detections, i)
-                box = self.compute_box(detections, i, image)
-                entities = entities + entity + ','
 
-                self.draw_detction_in(image,
-                                      box=box,
-                                      entity=entity,
-                                      confidence=confidence,
-                                      color=color)
+                existing_entity = self.existing_entity_in(event_entities=event_entities,
+                                                          new_element=entity)
+                if existing_entity is None:
+                    copy_image = image.copy()
+                    box = self.compute_box(detections, i, copy_image)
+                    self.draw_detction_in(copy_image,
+                                          box=box,
+                                          entity=entity,
+                                          confidence=confidence,
+                                          color=color)
 
-        if entities != '':
-            self.create_event(entities=entities,
+                    new_event_entity = EventEntity(element=entity,
+                                                   image=copy_image)
+
+                    event_entities.append(new_event_entity)
+
+                else:
+                    entity_image = existing_entity.image
+                    box = self.compute_box(detections, i, entity_image)
+                    self.draw_detction_in(entity_image,
+                                          box=box,
+                                          entity=entity,
+                                          confidence=confidence,
+                                          color=color)
+                    existing_entity.add_same_element()
+
+        for event_entity in event_entities:
+            Utils.printInfo(str(event_entity.count) + ' elements of ' + event_entity.element)
+            self.create_event(entity=event_entity.element,
+                              count=event_entity.count,
                               area_id=area_id,
-                              image=image)
+                              image=event_entity.image)
 
     def compute_detections(self, image):
         blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 0.007843, (300, 300), 127.5)
@@ -77,6 +101,12 @@ class EventDetector:
         box = detections[0, 0, index, 3:7] * np.array([w, h, w, h])
         return box.astype("int")
 
+    def existing_entity_in(self, event_entities, new_element):
+        for event_entity in event_entities:
+            if event_entity.is_element_from_entity(new_element):
+                return event_entity
+        return None
+
     def detection_label_for(self, entity, confidence):
         return "{}: {:.2f}%".format(entity, confidence * 100)
 
@@ -91,27 +121,25 @@ class EventDetector:
         y = startY - 15 if startY - 15 > 15 else startY + 15
         cv2.putText(image, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-    def create_event(self, entities, area_id, image):
-        print(entities)
-
+    def create_event(self, entity, count, area_id, image):
         image_path = self.store_image_in_media(image=image,
-                                               area_id=area_id)
+                                               area_id=area_id,
+                                               entity=entity)
 
         if image_path is not None:
             event = Event(area_id=area_id,
-                          entity=entities,
-                          count=1,
+                          entity=entity,
+                          count=count,
                           image=image_path)
 
             event.save()
             print('-> Saving event:', event.id, 'in area:', event.area_id, 'entity:', event.entity, 'image_path:', event.image)
         else:
-            print('-> COULD NOT STORE IMAGE. NO EVENT CREATD')
+            print('-> COULD NOT STORE IMAGE. NO EVENT CREATED')
 
-
-    def store_image_in_media(self, image, area_id):
+    def store_image_in_media(self, image, area_id, entity):
         timestamp = str(time.time()).replace('.', '')
-        image_id = str(area_id) + '_' + timestamp
+        image_id = str(area_id) + '_' + timestamp + '_' + entity
         final_path = settings.BASE_DIR + settings.MEDIA_URL + str(image_id) + '.jpg'
         cv2.imwrite(final_path, img=image)
 

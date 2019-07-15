@@ -4,7 +4,7 @@ from djitellopy import Tello
 from asd_drone.utils import Utils
 
 
-class VideoGet:
+class FrameCapture:
     """
     Class that continuously gets frames from a VideoCapture object
     with a dedicated thread.

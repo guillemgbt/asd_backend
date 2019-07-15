@@ -5,7 +5,7 @@ from asd_drone import constants
 from djitellopy import Tello
 from asd_drone.utils import Utils
 from asd_drone.event_detector import EventDetector
-from asd_drone.VideoGet import VideoGet
+from asd_drone.frame_capture import FrameCapture
 
 
 class FlightControl:
@@ -41,7 +41,7 @@ class FlightControl:
             self.set_state_to(new_state=constants.STATE_ERROR)
             return
 
-        stream = VideoGet(drone=self.drone)
+        stream = FrameCapture(drone=self.drone)
         stream.start()
 
         self.drone.takeoff()
