@@ -8,7 +8,7 @@ idna==2.8
 numpy==1.16.4
 opencv-contrib-python==4.1.0.25
 opencv-python==4.1.0.25
-Pillow==6.0.0
+Pillow==6.2.0
 pygame==1.9.6
 Pygments==2.4.2
 pytz==2019.1
