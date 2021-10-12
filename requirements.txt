@@ -6,7 +6,7 @@ djitellopy==1.5
 httpie==1.0.2
 idna==2.8
 numpy==1.16.4
-opencv-contrib-python==4.1.0.25
+opencv-contrib-python==4.1.1.26
 opencv-python==4.1.0.25
 Pillow==6.0.0
 pygame==1.9.6
