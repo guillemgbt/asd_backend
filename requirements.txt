@@ -3,7 +3,7 @@ chardet==3.0.4
 Django==2.2.2
 djangorestframework==3.9.4
 djitellopy==1.5
-httpie==1.0.2
+httpie==3.1.0
 idna==2.8
 numpy==1.16.4
 opencv-contrib-python==4.1.0.25
